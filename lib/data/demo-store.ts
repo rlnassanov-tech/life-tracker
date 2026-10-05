@@ -1,9 +1,16 @@
 import { DEFAULT_TZ, addDays, sleepHours, todayIn } from "@/lib/dates"
-import type { DailyMetrics, Direction, Session } from "@/lib/types"
+import type { Attendance, DailyMetrics, Direction, Grade, Session, Subject } from "@/lib/types"
 
 // Данные демо-режима. Живут в памяти сервера и пропадают при его перезапуске.
 
-type DemoStore = { directions: Direction[]; sessions: Session[]; metrics: DailyMetrics[] }
+type DemoStore = {
+  directions: Direction[]
+  sessions: Session[]
+  metrics: DailyMetrics[]
+  subjects: Subject[]
+  attendance: Attendance[]
+  grades: Grade[]
+}
 
 function seed(): DemoStore {
   const directions: Direction[] = [
@@ -48,11 +55,36 @@ function seed(): DemoStore {
     })
   }
 
-  return { directions, sessions, metrics }
+  // Универ: предметы, пары за две недели (кроме выходных), несколько оценок
+  const subjects: Subject[] = [
+    { id: "s-math", name: "Матан", archived: false },
+    { id: "s-phys", name: "Физика", archived: false },
+    { id: "s-eng", name: "Английский", archived: false },
+    { id: "s-hist", name: "История Казахстана", archived: false },
+  ]
+  const attendance: Attendance[] = []
+  for (let i = 1; i < 14; i++) {
+    const date = addDays(today, -i)
+    const weekday = new Date(date + "T00:00:00Z").getUTCDay()
+    if (weekday === 0 || weekday === 6) continue // в выходные пар нет
+    subjects.forEach((s, k) => {
+      if ((i + k) % 2 === 0) {
+        attendance.push({ id: crypto.randomUUID(), subject_id: s.id, date, attended: (i * 3 + k) % 7 !== 0 })
+      }
+    })
+  }
+  const grades: Grade[] = [
+    { id: crypto.randomUUID(), subject_id: "s-math", date: addDays(today, -10), grade: 88, kind: "srs", note: null },
+    { id: crypto.randomUUID(), subject_id: "s-math", date: addDays(today, -3), grade: 92, kind: "test", note: null },
+    { id: crypto.randomUUID(), subject_id: "s-phys", date: addDays(today, -6), grade: 74, kind: "lab", note: "Лаба №3" },
+    { id: crypto.randomUUID(), subject_id: "s-eng", date: addDays(today, -2), grade: 97, kind: "homework", note: null },
+  ]
+
+  return { directions, sessions, metrics, subjects, attendance, grades }
 }
 
 // globalThis — чтобы данные не сбрасывались при горячей перезагрузке кода в dev.
 // Если в коде появилась новая коллекция (store старой версии) — пересоздаём.
 const g = globalThis as unknown as { demoStore?: DemoStore }
-if (!g.demoStore?.metrics) g.demoStore = seed()
+if (!g.demoStore?.grades) g.demoStore = seed()
 export const demoStore = g.demoStore

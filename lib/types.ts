@@ -29,5 +29,30 @@ export type DailyMetrics = {
   steps: number
 }
 
+export type Subject = {
+  id: string
+  name: string
+  archived: boolean
+}
+
+export type Attendance = {
+  id: string
+  subject_id: string
+  date: string
+  attended: boolean
+}
+
+export const GRADE_KINDS = ["srs", "rk", "exam", "lab", "test", "homework", "other"] as const
+export type GradeKind = (typeof GRADE_KINDS)[number]
+
+export type Grade = {
+  id: string
+  subject_id: string
+  date: string
+  grade: number
+  kind: GradeKind
+  note: string | null
+}
+
 // То, что приходит из формы записи
 export type SessionInput = Omit<Session, "id">
