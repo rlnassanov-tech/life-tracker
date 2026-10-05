@@ -41,6 +41,23 @@ export const t = {
     empty: "Нет активных направлений. Добавь их в настройках.",
   },
 
+  metrics: {
+    water: "Вода",
+    sleep: "Сон",
+    steps: "Шаги",
+    ml: "мл",
+    of: "из",
+    notSet: "не внесено",
+    bedtime: "Отбой",
+    wakeup: "Подъём",
+    sleepHint: "Сон записывается на день подъёма",
+    stepsTitle: "Шаги за день",
+    save: "Сохранить",
+    prevDay: "Предыдущий день",
+    nextDay: "Следующий день",
+    backToToday: "К сегодня",
+  },
+
   entry: {
     newTitle: "Новая запись",
     editTitle: "Изменить запись",
@@ -88,6 +105,10 @@ export const t = {
     fromArchive: "Вернуть из архива",
     up: "Выше",
     down: "Ниже",
+    goals: "Цели на день",
+    waterGoal: "Вода, мл",
+    stepsGoal: "Шаги",
+    saved: "Сохранено",
   },
 
   common: {

@@ -1,22 +1,30 @@
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DirectionCard } from "@/components/direction-card"
+import { MetricsBar } from "@/components/metrics-bar"
 import { SessionDrawer } from "@/components/session-drawer"
 import { getProfile } from "@/lib/auth"
 import { getDirections } from "@/lib/data/directions"
+import { getLastSleep, getMetrics } from "@/lib/data/metrics"
 import { getRecentTitles, getSessionsSince } from "@/lib/data/sessions"
-import { formatDay, formatMinutes, weekStart } from "@/lib/dates"
+import { formatMinutes, weekStart } from "@/lib/dates"
 import { getToday } from "@/lib/today"
 import { t } from "@/messages/ru"
 
-export default async function TodayPage() {
+export default async function TodayPage({ searchParams }: PageProps<"/">) {
   const today = await getToday()
+  // ?d=2026-10-03 — показатели за прошлый день (будущее не пускаем)
+  const { d } = await searchParams
+  const metricsDate = typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) && d < today ? d : today
+
   // Запросы независимы — запускаем параллельно
-  const [profile, directions, weekSessions, recentTitles] = await Promise.all([
+  const [profile, directions, weekSessions, recentTitles, metrics, lastSleep] = await Promise.all([
     getProfile(),
     getDirections(),
     getSessionsSince(weekStart(today)),
     getRecentTitles(),
+    getMetrics(metricsDate),
+    getLastSleep(),
   ])
 
   const active = directions.filter((d) => !d.archived)
@@ -35,14 +43,14 @@ export default async function TodayPage() {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <p className="text-sm text-muted-foreground first-letter:uppercase">{formatDay(today)}</p>
         <h1 className="text-2xl font-semibold">{t.today.greeting(profile.name!)}</h1>
         <p className="text-muted-foreground">
           {t.today.todayShort}: {formatMinutes(totalToday)}
         </p>
       </header>
 
-      {/* Сюда на этапе 3 встанут вода / сон / шаги */}
+      {/* key={metricsDate}: при смене дня блок создаётся заново, и формы берут значения нового дня */}
+      <MetricsBar key={metricsDate} date={metricsDate} today={today} metrics={metrics} goals={profile} lastSleep={lastSleep} />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-sm text-muted-foreground">{t.today.directions}</h2>

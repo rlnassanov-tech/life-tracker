@@ -1,9 +1,9 @@
-import { DEFAULT_TZ, addDays, todayIn } from "@/lib/dates"
-import type { Direction, Session } from "@/lib/types"
+import { DEFAULT_TZ, addDays, sleepHours, todayIn } from "@/lib/dates"
+import type { DailyMetrics, Direction, Session } from "@/lib/types"
 
 // Данные демо-режима. Живут в памяти сервера и пропадают при его перезапуске.
 
-type DemoStore = { directions: Direction[]; sessions: Session[] }
+type DemoStore = { directions: Direction[]; sessions: Session[]; metrics: DailyMetrics[] }
 
 function seed(): DemoStore {
   const directions: Direction[] = [
@@ -33,9 +33,26 @@ function seed(): DemoStore {
     if (i % 3 !== 2) add(i, "d-code", 60 + (i % 4) * 20, "Трекер жизни")
   }
 
-  return { directions, sessions }
+  // Показатели: сон, вода, шаги за те же две недели
+  const metrics: DailyMetrics[] = []
+  for (let i = 0; i < 14; i++) {
+    const sleep_start = ["23:30:00", "00:15:00", "23:00:00", "01:00:00"][i % 4]
+    const sleep_end = ["07:00:00", "07:30:00", "08:15:00"][i % 3]
+    metrics.push({
+      date: addDays(today, -i),
+      sleep_start,
+      sleep_end,
+      sleep_hours: sleepHours(sleep_start, sleep_end),
+      water_ml: i === 0 ? 750 : 1250 + (i % 4) * 250,
+      steps: i === 0 ? 3200 : 5000 + ((i * 1700) % 6000),
+    })
+  }
+
+  return { directions, sessions, metrics }
 }
 
-// globalThis — чтобы данные не сбрасывались при горячей перезагрузке кода в dev
+// globalThis — чтобы данные не сбрасывались при горячей перезагрузке кода в dev.
+// Если в коде появилась новая коллекция (store старой версии) — пересоздаём.
 const g = globalThis as unknown as { demoStore?: DemoStore }
-export const demoStore = (g.demoStore ??= seed())
+if (!g.demoStore?.metrics) g.demoStore = seed()
+export const demoStore = g.demoStore

@@ -19,5 +19,15 @@ export type Session = {
   note: string | null
 }
 
+// Показатели за день. Время — строки 'HH:MM:SS' (так отдаёт Postgres)
+export type DailyMetrics = {
+  date: string
+  sleep_start: string | null
+  sleep_end: string | null
+  sleep_hours: number | null
+  water_ml: number
+  steps: number
+}
+
 // То, что приходит из формы записи
 export type SessionInput = Omit<Session, "id">

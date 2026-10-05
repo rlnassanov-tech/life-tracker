@@ -1,12 +1,14 @@
 import { logout } from "@/lib/actions/profile"
+import { getProfile } from "@/lib/auth"
 import { getDirections } from "@/lib/data/directions"
 import { Button } from "@/components/ui/button"
 import { DirectionsManager } from "@/components/directions-manager"
+import { GoalsForm } from "@/components/goals-form"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { t } from "@/messages/ru"
 
 export default async function SettingsPage() {
-  const directions = await getDirections()
+  const [profile, directions] = await Promise.all([getProfile(), getDirections()])
 
   return (
     <div className="flex flex-col gap-8">
@@ -15,6 +17,11 @@ export default async function SettingsPage() {
       <section className="flex flex-col gap-2">
         <h2 className="text-sm text-muted-foreground">{t.settings.directions}</h2>
         <DirectionsManager directions={directions} />
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-sm text-muted-foreground">{t.settings.goals}</h2>
+        <GoalsForm water={profile.water_goal_ml} steps={profile.steps_goal} />
       </section>
 
       <section className="flex flex-col gap-2">

@@ -40,6 +40,14 @@ export function formatDay(date: string) {
   }).format(toUTC(date))
 }
 
+// Часы сна между отбоем и подъёмом ('23:30' → '07:00' = 7.5). Та же формула, что в базе.
+export function sleepHours(start: string, end: string) {
+  const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5))
+  let diff = toMin(end) - toMin(start)
+  if (diff <= 0) diff += 24 * 60
+  return Math.round((diff / 60) * 100) / 100
+}
+
 // 95 → «1 ч 35 мин», 40 → «40 мин», 0 → «0 мин»
 export function formatMinutes(min: number) {
   const h = Math.floor(min / 60)
