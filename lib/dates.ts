@@ -40,6 +40,21 @@ export function formatDay(date: string) {
   }).format(toUTC(date))
 }
 
+// «5 окт.»
+export function formatDayMonth(date: string) {
+  return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short", timeZone: "UTC" }).format(toUTC(date))
+}
+
+// «пн»
+export function formatWeekday(date: string) {
+  return new Intl.DateTimeFormat("ru-RU", { weekday: "short", timeZone: "UTC" }).format(toUTC(date))
+}
+
+// Сколько дней от a до b (b позже → положительное число)
+export function daysBetween(a: string, b: string) {
+  return Math.round((toUTC(b).getTime() - toUTC(a).getTime()) / 86_400_000)
+}
+
 // Часы сна между отбоем и подъёмом ('23:30' → '07:00' = 7.5). Та же формула, что в базе.
 export function sleepHours(start: string, end: string) {
   const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5))

@@ -58,6 +58,24 @@ export const t = {
     backToToday: "К сегодня",
   },
 
+  week: {
+    prev: "Предыдущая неделя",
+    next: "Следующая неделя",
+    current: "К текущей неделе",
+    total: "Всего за неделю",
+    byDay: "По дням",
+    byDirection: "Куда ушло время",
+    empty: "За эту неделю записей нет",
+    averages: "В среднем за день",
+    sleep: "Сон",
+    water: "Вода",
+    steps: "Шаги",
+    daysWithData: (n: number) => `${n} из 7 дн.`,
+    neglected: "Давно не занимался",
+    neglectedDays: (n: number) => `${n} дн. без записей`,
+    never: "ещё ни одной записи",
+  },
+
   uni: {
     mark: "Отметить пару",
     attended: "Был",

@@ -13,19 +13,44 @@ function sortDemo(list: Session[]) {
   return [...list].reverse().sort((a, b) => b.date.localeCompare(a.date))
 }
 
-// Все записи начиная с даты from (для сумм за неделю/месяц)
-export async function getSessionsSince(from: string): Promise<Session[]> {
-  if (DEMO) return sortDemo(demoStore.sessions.filter((s) => s.date >= from))
+// Все записи начиная с даты from (и до to, если указано) — для сумм за неделю/месяц
+export async function getSessionsSince(from: string, to?: string): Promise<Session[]> {
+  if (DEMO) return sortDemo(demoStore.sessions.filter((s) => s.date >= from && (!to || s.date <= to)))
 
   const supabase = await createClient()
-  const { data, error } = await supabase
+  let query = supabase
     .from("sessions")
     .select(COLUMNS)
     .gte("date", from)
     .order("date", { ascending: false })
     .order("created_at", { ascending: false })
+  if (to) query = query.lte("date", to)
+  const { data, error } = await query
   if (error) throw error
   return data
+}
+
+// Дата последней записи по каждому направлению — чтобы найти заброшенные
+export async function getLastSessionDates(): Promise<Record<string, string>> {
+  let rows: Pick<Session, "direction_id" | "date">[]
+
+  if (DEMO) {
+    rows = sortDemo(demoStore.sessions)
+  } else {
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("sessions")
+      .select("direction_id, date")
+      .order("date", { ascending: false })
+      .limit(1000)
+    if (error) throw error
+    rows = data
+  }
+
+  // Список отсортирован от новых к старым, поэтому первая встреча — самая свежая дата
+  const result: Record<string, string> = {}
+  for (const { direction_id, date } of rows) result[direction_id] ??= date
+  return result
 }
 
 // История одного направления (последние 200 записей)
