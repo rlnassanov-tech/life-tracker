@@ -34,6 +34,40 @@ export const t = {
 
   today: {
     greeting: (name: string) => `Привет, ${name}`,
+    directions: "Направления",
+    todayShort: "сегодня",
+    weekShort: "неделя",
+    addEntry: "Запись",
+    empty: "Нет активных направлений. Добавь их в настройках.",
+  },
+
+  entry: {
+    newTitle: "Новая запись",
+    editTitle: "Изменить запись",
+    direction: "Направление",
+    duration: "Сколько минут",
+    minutes: "мин",
+    what: "Что делал",
+    whatPlaceholder: "Необязательно",
+    note: "Заметка",
+    addNote: "+ заметка",
+    date: "Дата",
+    today: "Сегодня",
+    yesterday: "Вчера",
+    save: "Сохранить",
+    saved: "Записано",
+    delete: "Удалить",
+    deleteConfirm: "Удалить запись?",
+    deleted: "Удалено",
+  },
+
+  direction: {
+    week: "За неделю",
+    month: "За месяц",
+    history: "История",
+    empty: "Пока нет записей",
+    back: "Назад",
+    archived: "В архиве",
   },
 
   settings: {
@@ -41,6 +75,19 @@ export const t = {
     dark: "Тёмная",
     light: "Светлая",
     logout: "Выйти",
+    directions: "Направления",
+    addDirection: "Добавить направление",
+    archive: "Архив",
+    newDirection: "Новое направление",
+    editDirection: "Направление",
+    name: "Название",
+    icon: "Эмодзи",
+    color: "Цвет",
+    save: "Сохранить",
+    toArchive: "В архив",
+    fromArchive: "Вернуть из архива",
+    up: "Выше",
+    down: "Ниже",
   },
 
   common: {

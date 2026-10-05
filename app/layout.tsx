@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { ThemeProvider } from "next-themes"
 import { Toaster } from "@/components/ui/sonner"
+import { TimezoneSync } from "@/components/timezone-sync"
 import { t } from "@/messages/ru"
 import "./globals.css"
 
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           {children}
           <Toaster position="top-center" />
+          <TimezoneSync />
         </ThemeProvider>
       </body>
     </html>
