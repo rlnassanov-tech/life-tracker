@@ -22,7 +22,11 @@ export function LoginForm({ linkError }: { linkError: boolean }) {
     e.preventDefault()
     setLoading(true)
     setError("")
-    const { error } = await createClient().auth.signInWithOtp({ email })
+    // emailRedirectTo — куда Supabase вернёт после нажатия на ссылку в письме
+    const { error } = await createClient().auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/confirm` },
+    })
     setLoading(false)
     if (error) return setError(error.message)
     setStep("code")

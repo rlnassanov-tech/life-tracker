@@ -4,13 +4,14 @@ export const t = {
 
   login: {
     title: "Вход",
-    subtitle: "Пришлём письмо со ссылкой и кодом",
+    subtitle: "Пришлём письмо со ссылкой для входа",
     email: "Email",
     emailPlaceholder: "you@example.com",
-    send: "Получить код",
+    send: "Получить ссылку",
     sending: "Отправляем…",
-    codeSent: (email: string) => `Письмо отправлено на ${email}. Введи код из письма или нажми ссылку в нём.`,
-    code: "Код из письма",
+    codeSent: (email: string) =>
+      `Письмо отправлено на ${email}. Открой ссылку из письма в этом же браузере. Если в письме есть код — введи его ниже.`,
+    code: "Код из письма (если есть)",
     verify: "Войти",
     verifying: "Проверяем…",
     otherEmail: "Другой email",
