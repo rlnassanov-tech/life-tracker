@@ -2,6 +2,7 @@ import { logout } from "@/lib/actions/profile"
 import { getProfile } from "@/lib/auth"
 import { getDirections } from "@/lib/data/directions"
 import { Button } from "@/components/ui/button"
+import { DeleteAccountButton } from "@/components/delete-account-button"
 import { DirectionsManager } from "@/components/directions-manager"
 import { GoalsForm } from "@/components/goals-form"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -34,6 +35,8 @@ export default async function SettingsPage() {
           {t.settings.logout}
         </Button>
       </form>
+
+      <DeleteAccountButton />
     </div>
   )
 }

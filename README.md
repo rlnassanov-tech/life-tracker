@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ритм — трекер жизни
 
-## Getting Started
+PWA-приложение для людей с множеством направлений в жизни: учёба, языки, музыка, свои проекты. Работает в браузере и устанавливается на телефон как обычное приложение.
 
-First, run the development server:
+## Что умеет
+
+- **Сегодня** — кольца воды, сна и шагов + плитки направлений. Запись занятия в 2–3 нажатия, таймер ▶ с подсчётом минут, серии 🔥 «N дней подряд».
+- **Направления** — свои сферы (цвет, эмодзи, порядок, архив), история записей, суммы за неделю и месяц.
+- **Неделя** — график по дням, «куда ушло время», средние сон / вода / шаги, подсветка заброшенных направлений.
+- **Универ** — предметы, отметка посещаемости в одно нажатие, оценки по 100-балльной шкале с буквами (A–F), % посещаемости и средний балл.
+- «Отменить» после любого действия, тёмная тема, вход по email (код или ссылка), удаление аккаунта.
+
+## Стек
+
+- **Next.js 16** (App Router, Server Components, Server Actions) + TypeScript
+- **Tailwind CSS 4** + shadcn/ui
+- **Supabase** — Postgres, Auth (email OTP), Row Level Security на всех таблицах
+- **PWA** — Web App Manifest + свой service worker
+- Деплой на **Vercel**
+
+## Как устроено
+
+- `app/` — экраны. `(app)/` — всё, что за входом (общий таб-бар).
+- `lib/data/` — запросы к базе. `lib/actions/` — server actions (изменения данных, с проверкой ввода).
+- `supabase/migrations/` — SQL-схема: таблицы, RLS-политики, триггер стартовых направлений.
+- `messages/ru.ts` — все тексты интерфейса в одном месте (готово к добавлению английского).
+- Демо-режим: без ключей Supabase приложение запускается с тестовыми данными в памяти.
+
+## Запуск локально
 
 ```bash
+npm install
+cp .env.example .env.local   # вставить URL и publishable key из Supabase
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Миграции из `supabase/migrations/` по порядку выполнить в Supabase → SQL Editor.
+Без ключей приложение откроется в демо-режиме.

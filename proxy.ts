@@ -43,6 +43,9 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Не запускать для статики, картинок и файлов из public/
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  // Не запускать для статики, картинок и файлов PWA (manifest, service worker, офлайн-страница):
+  // они должны открываться и без входа
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|sw\\.js|manifest\\.webmanifest|offline\\.html|icons/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+  ],
 }

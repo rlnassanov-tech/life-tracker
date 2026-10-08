@@ -36,6 +36,17 @@ export async function saveGoals(water_goal_ml: number, steps_goal: number) {
   revalidatePath("/", "layout")
 }
 
+// Удалить аккаунт и все данные (функция delete_my_account в базе, миграция 0004)
+export async function deleteAccount() {
+  if (DEMO) redirect("/login")
+
+  const supabase = await createClient()
+  const { error } = await supabase.rpc("delete_my_account")
+  if (error) throw error
+  await supabase.auth.signOut()
+  redirect("/login")
+}
+
 export async function logout() {
   if (DEMO) redirect("/login")
 

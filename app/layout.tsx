@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { ThemeProvider } from "next-themes"
 import { Toaster } from "@/components/ui/sonner"
+import { SwRegister } from "@/components/sw-register"
 import { TimezoneSync } from "@/components/timezone-sync"
 import { t } from "@/messages/ru"
 import "./globals.css"
@@ -18,10 +19,15 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: t.appName,
+  description: t.appDescription,
+  applicationName: t.appName,
+  // iPhone: открывать с экрана «Домой» как отдельное приложение, без панелей Safari
+  appleWebApp: { capable: true, title: t.appName, statusBarStyle: "black-translucent" },
 }
 
 export const viewport: Viewport = {
   themeColor: "#0a0a0a",
+  viewportFit: "cover", // контент под «чёлкой»; отступы задаём через env(safe-area-inset-*)
 }
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -33,6 +39,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
           <Toaster position="top-center" />
           <TimezoneSync />
+          <SwRegister />
         </ThemeProvider>
       </body>
     </html>
