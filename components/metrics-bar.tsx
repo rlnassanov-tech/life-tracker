@@ -11,6 +11,7 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from 
 import { addWater, saveSleep, saveSteps } from "@/lib/actions/metrics"
 import { addDays, formatDay, formatMinutes, sleepHours } from "@/lib/dates"
 import { toastWithUndo } from "@/lib/undo"
+import { RING_COLORS, Ring, fmtHours, fmtShort } from "@/components/ring"
 import type { DailyMetrics } from "@/lib/types"
 import { t } from "@/messages/ru"
 
@@ -76,7 +77,7 @@ export function MetricsBar({ date, today, metrics, goals, lastSleep }: Props) {
       {/* Три кольца: вода / сон / шаги. Кольцо заполняется к цели дня */}
       <div className="grid grid-cols-3 gap-2">
         <div className="flex flex-col items-center gap-2 rounded-2xl bg-card p-3">
-          <Ring value={water} max={goals.water_goal_ml} color="#38bdf8" center={fmtShort(water)} />
+          <Ring value={water} max={goals.water_goal_ml} color={RING_COLORS.water} center={fmtShort(water)} />
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Droplet className="size-3.5 text-sky-400" /> {t.metrics.water}
           </span>
@@ -93,38 +94,6 @@ export function MetricsBar({ date, today, metrics, goals, lastSleep }: Props) {
         <StepsDrawer date={date} steps={metrics.steps} goal={goals.steps_goal} />
       </div>
     </section>
-  )
-}
-
-// 3200 → «3,2k», 750 → «750»
-const fmtShort = (n: number) =>
-  n >= 1000 ? `${(n / 1000).toLocaleString("ru-RU", { maximumFractionDigits: 1 })}k` : String(n)
-
-// Кольцо прогресса: серый круг + цветная дуга. Длина дуги = доля от цели
-function Ring({ value, max, color, center }: { value: number; max: number; color: string; center: string }) {
-  const r = 30
-  const length = 2 * Math.PI * r
-  const part = Math.min(1, max ? value / max : 0)
-  return (
-    <span className="relative block size-[72px]">
-      <svg viewBox="0 0 72 72" className="size-full -rotate-90">
-        <circle cx="36" cy="36" r={r} fill="none" strokeWidth="7" className="stroke-muted" />
-        <circle
-          cx="36"
-          cy="36"
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth="7"
-          strokeLinecap="round"
-          strokeDasharray={`${part * length} ${length}`}
-          className="transition-all duration-500"
-        />
-      </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-sm font-semibold tabular-nums">
-        {center}
-      </span>
-    </span>
   )
 }
 
@@ -175,8 +144,8 @@ function SleepDrawer({ date, metrics, lastSleep }: Pick<Props, "date" | "metrics
             <Ring
               value={hours ?? 0}
               max={8}
-              color="#818cf8"
-              center={hours != null ? `${Math.floor(hours)}:${String(Math.round((hours % 1) * 60)).padStart(2, "0")}` : "—"}
+              color={RING_COLORS.sleep}
+              center={hours != null ? fmtHours(hours) : "—"}
             />
           }
           label={
@@ -234,7 +203,7 @@ function StepsDrawer({ date, steps, goal }: { date: string; steps: number; goal:
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
         <RingButton
-          ring={<Ring value={steps} max={goal} color="#34d399" center={steps ? fmtShort(steps) : "—"} />}
+          ring={<Ring value={steps} max={goal} color={RING_COLORS.steps} center={steps ? fmtShort(steps) : "—"} />}
           label={
             <>
               <Footprints className="size-3.5 text-emerald-400" /> {t.metrics.steps}

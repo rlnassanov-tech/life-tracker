@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { AlertTriangle, ChevronLeft, ChevronRight, Droplet, Footprints, Moon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { RING_COLORS, Ring, fmtHours, fmtShort } from "@/components/ring"
+import { getProfile } from "@/lib/auth"
 import { getDirections } from "@/lib/data/directions"
 import { getMetricsRange } from "@/lib/data/metrics"
 import { getLastSessionDates, getSessionsSince } from "@/lib/data/sessions"
@@ -21,7 +23,8 @@ export default async function WeekPage({ searchParams }: PageProps<"/week">) {
   const isCurrent = from === currentWeek
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i))
 
-  const [directions, sessions, metrics, lastDates] = await Promise.all([
+  const [profile, directions, sessions, metrics, lastDates] = await Promise.all([
+    getProfile(),
     getDirections(),
     getSessionsSince(from, to),
     getMetricsRange(from, to),
@@ -49,26 +52,33 @@ export default async function WeekPage({ searchParams }: PageProps<"/week">) {
   const sleepValues = metrics.filter((m) => m.sleep_hours != null).map((m) => Number(m.sleep_hours))
   const waterValues = metrics.filter((m) => m.water_ml > 0).map((m) => m.water_ml)
   const stepsValues = metrics.filter((m) => m.steps > 0).map((m) => m.steps)
+  // Кольцо заполняется к цели дня: сон — 8 ч, вода и шаги — цели из настроек
   const averages = [
     {
-      icon: <Moon className="size-4 text-indigo-400" />,
-      label: t.week.sleep,
-      value: avg(sleepValues),
-      format: (v: number) => formatMinutes(Math.round(v * 60)),
-      count: sleepValues.length,
-    },
-    {
-      icon: <Droplet className="size-4 text-sky-400" />,
+      icon: <Droplet className="size-3.5 text-sky-400" />,
       label: t.week.water,
       value: avg(waterValues),
-      format: (v: number) => `${Math.round(v).toLocaleString("ru-RU")} мл`,
+      goal: profile.water_goal_ml,
+      color: RING_COLORS.water,
+      center: fmtShort,
       count: waterValues.length,
     },
     {
-      icon: <Footprints className="size-4 text-emerald-400" />,
+      icon: <Moon className="size-3.5 text-indigo-400" />,
+      label: t.week.sleep,
+      value: avg(sleepValues),
+      goal: 8,
+      color: RING_COLORS.sleep,
+      center: fmtHours,
+      count: sleepValues.length,
+    },
+    {
+      icon: <Footprints className="size-3.5 text-emerald-400" />,
       label: t.week.steps,
       value: avg(stepsValues),
-      format: (v: number) => Math.round(v).toLocaleString("ru-RU"),
+      goal: profile.steps_goal,
+      color: RING_COLORS.steps,
+      center: fmtShort,
       count: stepsValues.length,
     },
   ]
@@ -129,6 +139,22 @@ export default async function WeekPage({ searchParams }: PageProps<"/week">) {
           ))}
         </section>
       )}
+
+      {/* Средние за день — кольцами, как на «Сегодня» */}
+      <section className="flex flex-col gap-3">
+        <h2 className="text-sm text-muted-foreground">{t.week.averages}</h2>
+        <div className="grid grid-cols-3 gap-2">
+          {averages.map((a) => (
+            <div key={a.label} className="flex flex-col items-center gap-2 rounded-2xl bg-card p-3">
+              <Ring value={a.value ?? 0} max={a.goal} color={a.color} center={a.value === null ? "—" : a.center(a.value)} />
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                {a.icon} {a.label}
+              </span>
+              <span className="text-xs text-muted-foreground">{t.week.daysWithData(a.count)}</span>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="flex flex-col gap-4 rounded-2xl bg-card p-4">
         <div>
@@ -191,21 +217,6 @@ export default async function WeekPage({ searchParams }: PageProps<"/week">) {
         ))}
       </section>
 
-      {/* Средние показатели */}
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm text-muted-foreground">{t.week.averages}</h2>
-        <div className="grid grid-cols-3 gap-2">
-          {averages.map((a) => (
-            <div key={a.label} className="flex flex-col gap-1 rounded-2xl bg-card p-3">
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                {a.icon} {a.label}
-              </span>
-              <span className="font-semibold">{a.value === null ? "—" : a.format(a.value)}</span>
-              <span className="text-xs text-muted-foreground">{t.week.daysWithData(a.count)}</span>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
   )
 }
