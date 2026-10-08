@@ -30,7 +30,8 @@ function useStop(timer: Timer | null) {
 }
 
 // Кнопка на карточке направления: ▶ запускает, ⏹ (с временем) останавливает
-export function TimerButton({ direction, ...drawer }: DrawerData & { direction: Direction }) {
+// compact — маленькая круглая кнопка только с иконкой (для плитки направления)
+export function TimerButton({ direction, compact, ...drawer }: DrawerData & { direction: Direction; compact?: boolean }) {
   const timer = useTimer()
   const running = timer?.directionId === direction.id
   const now = useNowSeconds(running)
@@ -50,11 +51,13 @@ export function TimerButton({ direction, ...drawer }: DrawerData & { direction: 
         variant={running ? "default" : "secondary"}
         size="icon"
         onClick={running ? stop : start}
-        className="h-14 w-16 flex-col gap-0.5 rounded-xl"
+        className={compact ? "size-10 rounded-full" : "h-14 w-16 flex-col gap-0.5 rounded-xl"}
         aria-label={running ? t.timer.stop : t.timer.start}
       >
-        {running ? <Square className="size-4" /> : <Play className="size-5" />}
-        {running && <span className="text-xs tabular-nums">{formatElapsed(now - Math.floor(timer.startedAt / 1000))}</span>}
+        {running ? <Square className="size-4" /> : <Play className={compact ? "size-4" : "size-5"} />}
+        {running && !compact && (
+          <span className="text-xs tabular-nums">{formatElapsed(now - Math.floor(timer.startedAt / 1000))}</span>
+        )}
       </Button>
       <SessionDrawer
         {...drawer}

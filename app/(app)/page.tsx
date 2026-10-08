@@ -8,7 +8,7 @@ import { getProfile } from "@/lib/auth"
 import { getDirections } from "@/lib/data/directions"
 import { getLastSleep, getMetrics } from "@/lib/data/metrics"
 import { getActiveDays, getRecentTitles, getSessionsSince } from "@/lib/data/sessions"
-import { addDays, formatMinutes, weekStart } from "@/lib/dates"
+import { addDays, daysBetween, formatMinutes, weekStart } from "@/lib/dates"
 import { currentStreak } from "@/lib/streaks"
 import { getToday } from "@/lib/today"
 import { t } from "@/messages/ru"
@@ -43,13 +43,23 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
 
   const drawer = { directions: active, recentTitles, today }
 
+  // Сколько дней без записей (по последнему активному дню). null — записей не было
+  const idleDays = (id: string) => {
+    const days = activeDays[id]
+    return days?.length ? daysBetween(days.reduce((a, b) => (a > b ? a : b)), today) : null
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-2xl font-semibold">{t.today.greeting(profile.name!)}</h1>
-        <p className="text-muted-foreground">
-          {t.today.todayShort}: {formatMinutes(totalToday)}
-        </p>
+      <header className="flex items-end justify-between gap-3">
+        <div>
+          <p className="text-sm text-muted-foreground">{t.today.greeting(profile.name!)}</p>
+          <h1 className="text-3xl font-semibold">{t.nav.today}</h1>
+        </div>
+        <div className="text-right">
+          <div className="text-2xl font-semibold tabular-nums">{formatMinutes(totalToday)}</div>
+          <div className="text-xs text-muted-foreground">{t.today.totalHint}</div>
+        </div>
       </header>
 
       <TimerBanner {...drawer} />
@@ -60,16 +70,19 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
       <section className="flex flex-col gap-3">
         <h2 className="text-sm text-muted-foreground">{t.today.directions}</h2>
         {active.length === 0 && <p className="text-muted-foreground">{t.today.empty}</p>}
-        {active.map((d) => (
-          <DirectionCard
-            key={d.id}
-            direction={d}
-            todayMin={todayMin[d.id] ?? 0}
-            weekMin={weekMin[d.id] ?? 0}
-            streak={currentStreak(activeDays[d.id], today)}
-            {...drawer}
-          />
-        ))}
+        <div className="grid grid-cols-2 gap-3">
+          {active.map((d) => (
+            <DirectionCard
+              key={d.id}
+              direction={d}
+              todayMin={todayMin[d.id] ?? 0}
+              weekMin={weekMin[d.id] ?? 0}
+              streak={currentStreak(activeDays[d.id], today)}
+              idleDays={idleDays(d.id)}
+              {...drawer}
+            />
+          ))}
+        </div>
       </section>
 
       {active.length > 0 && (

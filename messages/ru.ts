@@ -34,6 +34,7 @@ export const t = {
 
   today: {
     greeting: (name: string) => `Привет, ${name}`,
+    totalHint: "на направления",
     directions: "Направления",
     todayShort: "сегодня",
     weekShort: "неделя",
