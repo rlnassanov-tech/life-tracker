@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer"
-import { addGrade } from "@/lib/actions/uni"
+import { addGrade, deleteGrade } from "@/lib/actions/uni"
 import { addDays } from "@/lib/dates"
 import { letter } from "@/lib/grades"
+import { toastWithUndo } from "@/lib/undo"
 import { cn } from "@/lib/utils"
 import { GRADE_KINDS, type GradeKind, type Subject } from "@/lib/types"
 import { t } from "@/messages/ru"
@@ -52,8 +53,8 @@ function GradeForm({ subjects, today, defaultSubjectId, onDone }: Omit<Props, "t
     e.preventDefault()
     startTransition(async () => {
       try {
-        await addGrade({ subject_id: subjectId, date, grade: value, kind, note })
-        toast.success(t.entry.saved)
+        const id = await addGrade({ subject_id: subjectId, date, grade: value, kind, note })
+        toastWithUndo(t.entry.saved, () => deleteGrade(id))
         onDone()
       } catch {
         toast.error(t.common.error)

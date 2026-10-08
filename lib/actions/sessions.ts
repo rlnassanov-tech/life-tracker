@@ -26,9 +26,11 @@ function refreshAll() {
   revalidatePath("/", "layout")
 }
 
+// Возвращает id новой записи — для кнопки «Отменить»
 export async function addSession(input: SessionInput) {
-  await db.addSession(clean(input))
+  const id = await db.addSession(clean(input))
   refreshAll()
+  return id
 }
 
 export async function updateSession(id: string, input: SessionInput) {

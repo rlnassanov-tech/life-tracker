@@ -40,8 +40,9 @@ export async function setSubjectArchived(id: string, archived: boolean) {
 export async function markAttendance(subject_id: string, date: string, attended: boolean) {
   checkDate(date)
   if (!subject_id) throw new Error("Не выбран предмет")
-  await db.addAttendance({ subject_id, date, attended: Boolean(attended) })
+  const id = await db.addAttendance({ subject_id, date, attended: Boolean(attended) })
   refreshAll()
+  return id
 }
 
 export async function deleteAttendance(id: string) {
@@ -58,7 +59,7 @@ export async function addGrade(input: Omit<Grade, "id">) {
   if (!(grade >= 0 && grade <= 100)) throw new Error("Оценка от 0 до 100")
   const kind: GradeKind = GRADE_KINDS.includes(input.kind) ? input.kind : "other"
 
-  await db.addGrade({
+  const id = await db.addGrade({
     subject_id: input.subject_id,
     date: input.date,
     grade,
@@ -66,6 +67,7 @@ export async function addGrade(input: Omit<Grade, "id">) {
     note: input.note?.trim() || null,
   })
   refreshAll()
+  return id
 }
 
 export async function deleteGrade(id: string) {

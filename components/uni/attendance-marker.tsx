@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { deleteAttendance, markAttendance } from "@/lib/actions/uni"
 import { addDays } from "@/lib/dates"
+import { toastWithUndo } from "@/lib/undo"
 import { cn } from "@/lib/utils"
 import type { Attendance, Subject } from "@/lib/types"
 import { t } from "@/messages/ru"
@@ -25,13 +26,21 @@ export function AttendanceMarker({ subjects, attendance, today }: Props) {
   const marked = attendance.filter((a) => a.date === date)
   const nameOf = (id: string) => subjects.find((s) => s.id === id)?.name ?? "—"
 
-  function run(action: () => Promise<void>) {
+  function run(action: () => Promise<unknown>) {
     startTransition(async () => {
       try {
         await action()
       } catch {
         toast.error(t.common.error)
       }
+    })
+  }
+
+  function mark(subjectId: string, attended: boolean) {
+    run(async () => {
+      const id = await markAttendance(subjectId, date, attended)
+      const label = `${nameOf(subjectId)}: ${attended ? t.uni.attended : t.uni.missed}`
+      toastWithUndo(label, () => deleteAttendance(id))
     })
   }
 
@@ -61,7 +70,7 @@ export function AttendanceMarker({ subjects, attendance, today }: Props) {
           <Button
             variant="secondary"
             disabled={pending}
-            onClick={() => run(() => markAttendance(s.id, date, true))}
+            onClick={() => mark(s.id, true)}
             className="h-12 w-20 text-emerald-400"
             aria-label={`${s.name}: ${t.uni.attended}`}
           >
@@ -70,7 +79,7 @@ export function AttendanceMarker({ subjects, attendance, today }: Props) {
           <Button
             variant="secondary"
             disabled={pending}
-            onClick={() => run(() => markAttendance(s.id, date, false))}
+            onClick={() => mark(s.id, false)}
             className="h-12 w-24 text-red-400"
             aria-label={`${s.name}: ${t.uni.missed}`}
           >

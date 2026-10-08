@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer"
 import { addWater, saveSleep, saveSteps } from "@/lib/actions/metrics"
 import { addDays, formatDay, formatMinutes, sleepHours } from "@/lib/dates"
+import { toastWithUndo } from "@/lib/undo"
 import type { DailyMetrics } from "@/lib/types"
 import { t } from "@/messages/ru"
 
@@ -34,6 +35,7 @@ export function MetricsBar({ date, today, metrics, goals, lastSleep }: Props) {
       addOptimisticWater(delta)
       try {
         await addWater(date, delta)
+        toastWithUndo(t.common.waterAdded(delta), () => addWater(date, -delta))
       } catch {
         toast.error(t.common.error)
       }

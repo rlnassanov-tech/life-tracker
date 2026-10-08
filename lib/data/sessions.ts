@@ -30,6 +30,24 @@ export async function getSessionsSince(from: string, to?: string): Promise<Sessi
   return data
 }
 
+// Дни, в которые были записи, по каждому направлению (начиная с from) — для серий 🔥
+export async function getActiveDays(from: string): Promise<Record<string, string[]>> {
+  let rows: Pick<Session, "direction_id" | "date">[]
+
+  if (DEMO) {
+    rows = demoStore.sessions.filter((s) => s.date >= from)
+  } else {
+    const supabase = await createClient()
+    const { data, error } = await supabase.from("sessions").select("direction_id, date").gte("date", from)
+    if (error) throw error
+    rows = data
+  }
+
+  const sets: Record<string, Set<string>> = {}
+  for (const { direction_id, date } of rows) (sets[direction_id] ??= new Set()).add(date)
+  return Object.fromEntries(Object.entries(sets).map(([id, set]) => [id, [...set]]))
+}
+
 // Дата последней записи по каждому направлению — чтобы найти заброшенные
 export async function getLastSessionDates(): Promise<Record<string, string>> {
   let rows: Pick<Session, "direction_id" | "date">[]
@@ -98,13 +116,16 @@ export async function getRecentTitles(): Promise<Record<string, string[]>> {
 
 export async function addSession(input: SessionInput) {
   if (DEMO) {
-    demoStore.sessions.push({ ...input, id: crypto.randomUUID() })
-    return
+    const id = crypto.randomUUID()
+    demoStore.sessions.push({ ...input, id })
+    return id
   }
 
   const supabase = await createClient()
-  const { error } = await supabase.from("sessions").insert(input)
+  // .select("id") — чтобы получить id новой строки (нужен для «Отменить»)
+  const { data, error } = await supabase.from("sessions").insert(input).select("id").single()
   if (error) throw error
+  return data.id as string
 }
 
 export async function updateSession(id: string, input: SessionInput) {

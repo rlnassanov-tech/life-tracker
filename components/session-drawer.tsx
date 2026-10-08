@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer"
 import { addSession, deleteSession, updateSession } from "@/lib/actions/sessions"
 import { addDays } from "@/lib/dates"
+import { toastWithUndo } from "@/lib/undo"
 import { cn } from "@/lib/utils"
 import type { Direction, Session } from "@/lib/types"
 import { t } from "@/messages/ru"
@@ -16,21 +17,28 @@ import { t } from "@/messages/ru"
 const PRESETS = [15, 30, 45, 60, 90]
 
 type Props = {
-  trigger: React.ReactNode
+  trigger?: React.ReactNode
   directions: Direction[]
   recentTitles: Record<string, string[]>
   today: string
   defaultDirectionId?: string
+  defaultDuration?: number // таймер подставляет сюда прошедшие минуты
   session?: Session // если передана — режим редактирования
+  // Управление снаружи (для таймера): если open передан, шторка открывается не по кнопке
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  onSaved?: () => void
 }
 
 // Шторка снизу для новой записи или правки существующей
-export function SessionDrawer({ trigger, ...props }: Props) {
-  const [open, setOpen] = useState(false)
+export function SessionDrawer({ trigger, open: controlledOpen, onOpenChange, ...props }: Props) {
+  const [innerOpen, setInnerOpen] = useState(false)
+  const open = controlledOpen ?? innerOpen
+  const setOpen = onOpenChange ?? setInnerOpen
 
   return (
     <Drawer open={open} onOpenChange={setOpen}>
-      <DrawerTrigger asChild>{trigger}</DrawerTrigger>
+      {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       <DrawerContent>
         <DrawerHeader className="pb-0">
           <DrawerTitle>{props.session ? t.entry.editTitle : t.entry.newTitle}</DrawerTitle>
@@ -47,11 +55,15 @@ function SessionForm({
   recentTitles,
   today,
   defaultDirectionId,
+  defaultDuration,
   session,
+  onSaved,
   onDone,
-}: Omit<Props, "trigger"> & { onDone: () => void }) {
+}: Omit<Props, "trigger" | "open" | "onOpenChange"> & { onDone: () => void }) {
   const [directionId, setDirectionId] = useState(session?.direction_id ?? defaultDirectionId ?? directions[0]?.id)
-  const [duration, setDuration] = useState(session ? String(session.duration_min) : "")
+  const [duration, setDuration] = useState(
+    session ? String(session.duration_min) : defaultDuration ? String(defaultDuration) : ""
+  )
   const [title, setTitle] = useState(session?.title ?? "")
   const [note, setNote] = useState(session?.note ?? "")
   const [showNote, setShowNote] = useState(!!session?.note)
@@ -66,9 +78,14 @@ function SessionForm({
     const input = { direction_id: directionId, date, duration_min: Number(duration), title, note }
     startTransition(async () => {
       try {
-        if (session) await updateSession(session.id, input)
-        else await addSession(input)
-        toast.success(t.entry.saved)
+        if (session) {
+          await updateSession(session.id, input)
+          toast.success(t.entry.saved)
+        } else {
+          const id = await addSession(input)
+          toastWithUndo(t.entry.saved, () => deleteSession(id))
+        }
+        onSaved?.()
         onDone()
       } catch {
         toast.error(t.common.error)
@@ -80,7 +97,9 @@ function SessionForm({
     if (!session || !confirm(t.entry.deleteConfirm)) return
     startTransition(async () => {
       await deleteSession(session.id)
-      toast.success(t.entry.deleted)
+      // «Отменить» создаёт запись заново с теми же данными (id будет новый — это не страшно)
+      const { direction_id, date, duration_min, title, note } = session
+      toastWithUndo(t.entry.deleted, () => addSession({ direction_id, date, duration_min, title, note }))
       onDone()
     })
   }
@@ -202,14 +221,17 @@ function SessionForm({
         </div>
       </div>
 
-      <Button type="submit" disabled={pending || !directionId} className="h-14 text-lg">
-        {t.entry.save}
-      </Button>
       {session && (
         <Button type="button" variant="destructive" disabled={pending} onClick={remove} className="h-12">
           {t.entry.delete}
         </Button>
       )}
+      {/* sticky — «Сохранить» всегда виден внизу, даже если форма длиннее экрана */}
+      <div className="sticky bottom-0 -mx-4 -mb-4 bg-popover px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <Button type="submit" disabled={pending || !directionId} className="h-14 w-full text-lg">
+          {t.entry.save}
+        </Button>
+      </div>
     </form>
   )
 }

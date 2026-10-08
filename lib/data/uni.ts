@@ -73,13 +73,16 @@ export async function getAttendance(subjectId?: string): Promise<Attendance[]> {
 
 export async function addAttendance(input: Omit<Attendance, "id">) {
   if (DEMO) {
-    demoStore.attendance.push({ ...input, id: crypto.randomUUID() })
-    return
+    const id = crypto.randomUUID()
+    demoStore.attendance.push({ ...input, id })
+    return id
   }
 
   const supabase = await createClient()
-  const { error } = await supabase.from("attendance").insert(input)
+  // .select("id") — чтобы получить id новой строки (нужен для «Отменить»)
+  const { data, error } = await supabase.from("attendance").insert(input).select("id").single()
   if (error) throw error
+  return data.id as string
 }
 
 export async function deleteAttendance(id: string) {
@@ -113,13 +116,16 @@ export async function getGrades(subjectId?: string): Promise<Grade[]> {
 
 export async function addGrade(input: Omit<Grade, "id">) {
   if (DEMO) {
-    demoStore.grades.push({ ...input, id: crypto.randomUUID() })
-    return
+    const id = crypto.randomUUID()
+    demoStore.grades.push({ ...input, id })
+    return id
   }
 
   const supabase = await createClient()
-  const { error } = await supabase.from("grades").insert(input)
+  // .select("id") — чтобы получить id новой строки (нужен для «Отменить»)
+  const { data, error } = await supabase.from("grades").insert(input).select("id").single()
   if (error) throw error
+  return data.id as string
 }
 
 export async function deleteGrade(id: string) {

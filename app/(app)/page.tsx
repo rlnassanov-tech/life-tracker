@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button"
 import { DirectionCard } from "@/components/direction-card"
 import { MetricsBar } from "@/components/metrics-bar"
 import { SessionDrawer } from "@/components/session-drawer"
+import { TimerBanner } from "@/components/timer"
 import { getProfile } from "@/lib/auth"
 import { getDirections } from "@/lib/data/directions"
 import { getLastSleep, getMetrics } from "@/lib/data/metrics"
-import { getRecentTitles, getSessionsSince } from "@/lib/data/sessions"
-import { formatMinutes, weekStart } from "@/lib/dates"
+import { getActiveDays, getRecentTitles, getSessionsSince } from "@/lib/data/sessions"
+import { addDays, formatMinutes, weekStart } from "@/lib/dates"
+import { currentStreak } from "@/lib/streaks"
 import { getToday } from "@/lib/today"
 import { t } from "@/messages/ru"
 
@@ -18,13 +20,14 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
   const metricsDate = typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d) && d < today ? d : today
 
   // Запросы независимы — запускаем параллельно
-  const [profile, directions, weekSessions, recentTitles, metrics, lastSleep] = await Promise.all([
+  const [profile, directions, weekSessions, recentTitles, metrics, lastSleep, activeDays] = await Promise.all([
     getProfile(),
     getDirections(),
     getSessionsSince(weekStart(today)),
     getRecentTitles(),
     getMetrics(metricsDate),
     getLastSleep(),
+    getActiveDays(addDays(today, -365)), // дни с записями за год — для серий 🔥
   ])
 
   const active = directions.filter((d) => !d.archived)
@@ -49,6 +52,8 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
         </p>
       </header>
 
+      <TimerBanner {...drawer} />
+
       {/* key={metricsDate}: при смене дня блок создаётся заново, и формы берут значения нового дня */}
       <MetricsBar key={metricsDate} date={metricsDate} today={today} metrics={metrics} goals={profile} lastSleep={lastSleep} />
 
@@ -61,6 +66,7 @@ export default async function TodayPage({ searchParams }: PageProps<"/">) {
             direction={d}
             todayMin={todayMin[d.id] ?? 0}
             weekMin={weekMin[d.id] ?? 0}
+            streak={currentStreak(activeDays[d.id], today)}
             {...drawer}
           />
         ))}

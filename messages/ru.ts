@@ -171,8 +171,27 @@ export const t = {
     saved: "Сохранено",
   },
 
+  timer: {
+    start: "Запустить таймер",
+    stop: "Стоп",
+    reset: "Сбросить таймер",
+    resetConfirm: "Сбросить таймер без записи?",
+    replaceConfirm: (name: string) => `Таймер уже идёт для «${name}». Сбросить его и запустить новый?`,
+  },
+
+  streak: {
+    title: "Серия",
+    days: (n: number) => `${n} дн.`,
+    best: (n: number) => `рекорд ${n}`,
+    hint: (n: number) => `${n} дн. подряд`,
+  },
+
   common: {
     soon: "Скоро здесь что-то появится",
     error: "Что-то пошло не так",
+    undo: "Отменить",
+    undone: "Отменено",
+    waterAdded: (delta: number) => (delta > 0 ? `+${delta} мл воды` : `${delta} мл воды`),
+    marked: "Отмечено",
   },
 }

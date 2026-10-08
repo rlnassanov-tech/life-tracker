@@ -6,6 +6,7 @@ import { SessionDrawer } from "@/components/session-drawer"
 import { getDirection, getDirections } from "@/lib/data/directions"
 import { getDirectionSessions, getRecentTitles } from "@/lib/data/sessions"
 import { formatDay, formatMinutes, monthStart, weekStart } from "@/lib/dates"
+import { bestStreak, currentStreak } from "@/lib/streaks"
 import { getToday } from "@/lib/today"
 import type { Session } from "@/lib/types"
 import { t } from "@/messages/ru"
@@ -22,6 +23,10 @@ export default async function DirectionPage({ params }: PageProps<"/directions/[
   if (!direction) notFound()
 
   const sum = (from: string) => sessions.filter((s) => s.date >= from).reduce((a, s) => a + s.duration_min, 0)
+
+  const days = sessions.map((s) => s.date)
+  const streak = currentStreak(days, today)
+  const best = bestStreak(days)
 
   // Группируем историю по дням (записи уже отсортированы, свежие сверху)
   const byDay = new Map<string, Session[]>()
@@ -54,6 +59,16 @@ export default async function DirectionPage({ params }: PageProps<"/directions/[
             <div className="text-xl font-semibold">{formatMinutes(min as number)}</div>
           </div>
         ))}
+        <div className="col-span-2 flex items-center justify-between rounded-2xl bg-card p-4">
+          <span className="text-sm text-muted-foreground">{t.streak.title}</span>
+          <span>
+            <span className="text-xl font-semibold">
+              {streak >= 1 ? "🔥 " : ""}
+              {t.streak.days(streak)}
+            </span>
+            <span className="text-sm text-muted-foreground"> · {t.streak.best(best)}</span>
+          </span>
+        </div>
       </div>
 
       {!direction.archived && (
