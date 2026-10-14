@@ -2,7 +2,7 @@ import "server-only"
 import { createClient } from "@/lib/supabase/server"
 import { DEMO } from "@/lib/demo"
 import { demoStore } from "@/lib/data/demo-store"
-import type { FinCategory, Transaction } from "@/lib/types"
+import type { Balance, Currency, FinCategory, Transaction } from "@/lib/types"
 
 // Запросы для вкладки «Деньги»: категории и операции
 
@@ -87,7 +87,7 @@ export type TransactionInput = Omit<Transaction, "id">
 export async function addTransaction(input: TransactionInput) {
   if (DEMO) {
     const id = crypto.randomUUID()
-    demoStore.transactions.push({ ...input, id })
+    demoStore.transactions.push({ ...input, id, created_at: new Date().toISOString() })
     return id
   }
 
@@ -117,5 +117,53 @@ export async function deleteTransaction(id: string) {
 
   const supabase = await createClient()
   const { error } = await supabase.from("transactions").delete().eq("id", id)
+  if (error) throw error
+}
+
+// ---------- Баланс ----------
+
+// Текущий баланс по каждой валюте, где он введён:
+// введённая сумма + доходы − расходы по операциям, добавленным после ввода
+export async function getBalances(): Promise<Balance[]> {
+  if (DEMO) {
+    return demoStore.balances.map((b) => {
+      const delta = demoStore.transactions
+        .filter((t) => t.currency === b.currency && t.created_at && t.created_at > b.as_of)
+        .reduce((sum, t) => sum + (t.kind === "income" ? t.amount : -t.amount), 0)
+      return { currency: b.currency, amount: b.amount + delta, as_of: b.as_of }
+    })
+  }
+
+  const supabase = await createClient()
+  const { data: rows, error } = await supabase.from("balances").select("currency, amount, as_of")
+  if (error) throw error
+
+  return Promise.all(
+    rows.map(async (b) => {
+      const { data: after, error } = await supabase
+        .from("transactions")
+        .select("kind, amount")
+        .eq("currency", b.currency)
+        .gt("created_at", b.as_of)
+      if (error) throw error
+      const delta = after.reduce((sum, t) => sum + (t.kind === "income" ? Number(t.amount) : -Number(t.amount)), 0)
+      return { currency: b.currency as Currency, amount: Number(b.amount) + delta, as_of: b.as_of }
+    })
+  )
+}
+
+// Ввести баланс вручную: «сейчас у меня X» — отсчёт начинается заново
+export async function setBalance(currency: Currency, amount: number) {
+  const as_of = new Date().toISOString()
+
+  if (DEMO) {
+    const row = demoStore.balances.find((b) => b.currency === currency)
+    if (row) Object.assign(row, { amount, as_of })
+    else demoStore.balances.push({ currency, amount, as_of })
+    return
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase.from("balances").upsert({ currency, amount, as_of }, { onConflict: "user_id,currency" })
   if (error) throw error
 }

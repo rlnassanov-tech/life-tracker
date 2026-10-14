@@ -78,6 +78,14 @@ export type Transaction = {
   currency: Currency
   date: string
   note: string | null
+  created_at?: string // когда добавлена (для расчёта баланса)
+}
+
+// Баланс по валюте: введённая вручную сумма + операции после момента ввода
+export type Balance = {
+  currency: Currency
+  amount: number // текущий баланс (уже с учётом операций)
+  as_of: string
 }
 
 // То, что приходит из формы записи

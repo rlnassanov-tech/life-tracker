@@ -1,5 +1,5 @@
 import { DEFAULT_TZ, addDays, sleepHours, todayIn } from "@/lib/dates"
-import type { Attendance, DailyMetrics, Direction, FinCategory, Grade, Session, Subject, Transaction } from "@/lib/types"
+import type { Attendance, DailyMetrics, Direction, FinCategory, Grade, Session, Subject, Transaction, Currency } from "@/lib/types"
 
 // Данные демо-режима. Живут в памяти сервера и пропадают при его перезапуске.
 
@@ -12,6 +12,7 @@ type DemoStore = {
   grades: Grade[]
   finCategories: FinCategory[]
   transactions: Transaction[]
+  balances: { currency: Currency; amount: number; as_of: string }[]
 }
 
 function seed(): DemoStore {
@@ -117,11 +118,14 @@ function seed(): DemoStore {
   tx(8, "c-free", 120, "Лендинг", "USD")
   tx(20, "c-free", 60000, "Бот на aiogram")
 
-  return { directions, sessions, metrics, subjects, attendance, grades, finCategories, transactions }
+  // Баланс введён «сейчас»: дальше его меняют только новые операции
+  const balances = [{ currency: "KZT" as Currency, amount: 185000, as_of: new Date().toISOString() }]
+
+  return { directions, sessions, metrics, subjects, attendance, grades, finCategories, transactions, balances }
 }
 
 // globalThis — чтобы данные не сбрасывались при горячей перезагрузке кода в dev.
 // Если в коде появилась новая коллекция (store старой версии) — пересоздаём.
 const g = globalThis as unknown as { demoStore?: DemoStore }
-if (!g.demoStore?.transactions) g.demoStore = seed()
+if (!g.demoStore?.balances) g.demoStore = seed()
 export const demoStore = g.demoStore

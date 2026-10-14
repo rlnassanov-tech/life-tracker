@@ -117,3 +117,12 @@ export async function setCurrency(currency: string) {
   }
   refreshAll()
 }
+
+// ---------- Баланс ----------
+
+export async function setBalance(currency: string, amount: number) {
+  const value = Math.round(Number(amount) * 100) / 100
+  if (!Number.isFinite(value) || Math.abs(value) >= 1e12) throw new Error("Неверная сумма")
+  await db.setBalance(checkCurrency(currency), value)
+  refreshAll()
+}

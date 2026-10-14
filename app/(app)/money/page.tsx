@@ -2,9 +2,10 @@ import Link from "next/link"
 import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight, Minus, Plus, Tags } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Ring, fmtShort } from "@/components/ring"
+import { BalanceCard } from "@/components/finance/balance-card"
 import { TransactionDrawer } from "@/components/finance/transaction-drawer"
 import { getProfile } from "@/lib/auth"
-import { getFinCategories, getTransactions } from "@/lib/data/finance"
+import { getBalances, getFinCategories, getTransactions } from "@/lib/data/finance"
 import { formatDay } from "@/lib/dates"
 import { expensesByCategory, formatMoney, formatMonth, monthRange, shiftMonth, totalsByCurrency } from "@/lib/money"
 import { getToday } from "@/lib/today"
@@ -22,11 +23,12 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
   const { from, to, days } = monthRange(month)
   const prev = monthRange(shiftMonth(month, -1))
 
-  const [profile, categories, list, prevList] = await Promise.all([
+  const [profile, categories, list, prevList, balances] = await Promise.all([
     getProfile(),
     getFinCategories(),
     getTransactions(from, to),
     getTransactions(prev.from, prev.to),
+    getBalances(),
   ])
   const main = (profile.currency ?? "KZT") as Currency
   const active = categories.filter((c) => !c.archived)
@@ -99,6 +101,9 @@ export default async function MoneyPage({ searchParams }: PageProps<"/money">) {
           )}
         </Button>
       </header>
+
+      {/* Баланс сейчас — вводится вручную, дальше меняется от операций */}
+      <BalanceCard balances={balances} currency={main} />
 
       {/* Остаток месяца */}
       <section className="flex flex-col gap-3 rounded-2xl bg-card p-4">
