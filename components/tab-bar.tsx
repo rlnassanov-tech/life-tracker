@@ -2,13 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { CalendarDays, GraduationCap, House, Settings } from "lucide-react"
+import { CalendarDays, GraduationCap, House, Settings, Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { t } from "@/messages/ru"
 
 const tabs = [
   { href: "/", label: t.nav.today, icon: House },
   { href: "/week", label: t.nav.week, icon: CalendarDays },
+  { href: "/money", label: t.nav.money, icon: Wallet },
   { href: "/uni", label: t.nav.uni, icon: GraduationCap },
   { href: "/settings", label: t.nav.settings, icon: Settings },
 ]
@@ -19,7 +20,7 @@ export function TabBar() {
   return (
     // pb-[env(safe-area-inset-bottom)] — отступ под «чёлку» снизу на iPhone
     <nav className="fixed inset-x-0 bottom-0 border-t bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-      <ul className="mx-auto grid max-w-lg grid-cols-4">
+      <ul className="mx-auto grid max-w-lg grid-cols-5">
         {tabs.map(({ href, label, icon: Icon }) => {
           const active = href === "/" ? pathname === "/" : pathname.startsWith(href)
           return (

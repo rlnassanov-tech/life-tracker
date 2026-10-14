@@ -14,7 +14,7 @@ export const getProfile = cache(async () => {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, name, water_goal_ml, steps_goal")
+    .select("id, name, water_goal_ml, steps_goal, currency")
     .eq("id", claims.claims.sub)
     .single()
   if (!profile) redirect("/login")

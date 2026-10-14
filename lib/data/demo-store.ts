@@ -1,5 +1,5 @@
 import { DEFAULT_TZ, addDays, sleepHours, todayIn } from "@/lib/dates"
-import type { Attendance, DailyMetrics, Direction, Grade, Session, Subject } from "@/lib/types"
+import type { Attendance, DailyMetrics, Direction, FinCategory, Grade, Session, Subject, Transaction } from "@/lib/types"
 
 // Данные демо-режима. Живут в памяти сервера и пропадают при его перезапуске.
 
@@ -10,6 +10,8 @@ type DemoStore = {
   subjects: Subject[]
   attendance: Attendance[]
   grades: Grade[]
+  finCategories: FinCategory[]
+  transactions: Transaction[]
 }
 
 function seed(): DemoStore {
@@ -80,11 +82,46 @@ function seed(): DemoStore {
     { id: crypto.randomUUID(), subject_id: "s-eng", date: addDays(today, -2), grade: 97, kind: "homework", note: null },
   ]
 
-  return { directions, sessions, metrics, subjects, attendance, grades }
+  // Финансы: стартовые категории и операции за ~2 месяца
+  const cat = (id: string, name: string, icon: string, color: string, kind: "expense" | "income", sort_order: number, monthly_budget: number | null = null): FinCategory =>
+    ({ id, name, icon, color, kind, sort_order, monthly_budget, archived: false })
+  const finCategories: FinCategory[] = [
+    cat("c-food", "Еда", "🍔", "#f97316", "expense", 0, 80000),
+    cat("c-cafe", "Кафе", "☕", "#eab308", "expense", 1, 25000),
+    cat("c-taxi", "Транспорт", "🚕", "#3b82f6", "expense", 2, 20000),
+    cat("c-home", "Дом", "🏠", "#14b8a6", "expense", 3),
+    cat("c-phone", "Связь", "📱", "#6366f1", "expense", 4),
+    cat("c-study", "Учёба", "📚", "#a855f7", "expense", 5),
+    cat("c-fun", "Развлечения", "🎮", "#84cc16", "expense", 6, 15000),
+    cat("c-other", "Другое", "📦", "#64748b", "expense", 7),
+    cat("c-stip", "Стипендия", "🎓", "#22c55e", "income", 0),
+    cat("c-free", "Фриланс", "💻", "#06b6d4", "income", 1),
+  ]
+  const transactions: Transaction[] = []
+  const tx = (daysAgo: number, category_id: string, amount: number, note: string | null = null, currency: Transaction["currency"] = "KZT") => {
+    const c = finCategories.find((c) => c.id === category_id)!
+    transactions.push({ id: crypto.randomUUID(), category_id, kind: c.kind, amount, currency, date: addDays(today, -daysAgo), note })
+  }
+  for (let i = 0; i < 60; i++) {
+    if (i % 2 === 0) tx(i, "c-food", 3500 + (i % 5) * 1200, i % 4 ? null : "Магнум")
+    if (i % 3 === 0) tx(i, "c-cafe", 1800 + (i % 4) * 600)
+    if (i % 4 === 1) tx(i, "c-taxi", 1200 + (i % 3) * 400, "Яндекс")
+    if (i % 9 === 4) tx(i, "c-fun", 4500)
+  }
+  tx(3, "c-phone", 3990, "Тариф")
+  tx(33, "c-phone", 3990, "Тариф")
+  tx(10, "c-study", 12000, "Курс по React")
+  tx(5, "c-other", 15, "Подписка", "USD")
+  tx(2, "c-stip", 52000)
+  tx(32, "c-stip", 52000)
+  tx(8, "c-free", 120, "Лендинг", "USD")
+  tx(20, "c-free", 60000, "Бот на aiogram")
+
+  return { directions, sessions, metrics, subjects, attendance, grades, finCategories, transactions }
 }
 
 // globalThis — чтобы данные не сбрасывались при горячей перезагрузке кода в dev.
 // Если в коде появилась новая коллекция (store старой версии) — пересоздаём.
 const g = globalThis as unknown as { demoStore?: DemoStore }
-if (!g.demoStore?.grades) g.demoStore = seed()
+if (!g.demoStore?.transactions) g.demoStore = seed()
 export const demoStore = g.demoStore

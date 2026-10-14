@@ -54,5 +54,31 @@ export type Grade = {
   note: string | null
 }
 
+// ---------- Финансы ----------
+export const CURRENCIES = ["KZT", "USD", "EUR", "RUB"] as const
+export type Currency = (typeof CURRENCIES)[number]
+export type FinKind = "expense" | "income"
+
+export type FinCategory = {
+  id: string
+  name: string
+  icon: string
+  color: string
+  kind: FinKind
+  monthly_budget: number | null // лимит в месяц (только расходы, в основной валюте)
+  archived: boolean
+  sort_order: number
+}
+
+export type Transaction = {
+  id: string
+  category_id: string
+  kind: FinKind
+  amount: number
+  currency: Currency
+  date: string
+  note: string | null
+}
+
 // То, что приходит из формы записи
 export type SessionInput = Omit<Session, "id">
