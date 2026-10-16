@@ -156,39 +156,8 @@ function ActivityForm({
         )}
       </div>
 
-      {/* Время: большая карточка «с → по» + длительность */}
-      <div className="flex flex-col gap-3 rounded-2xl bg-muted/50 p-4">
-        <div className="flex items-center justify-between gap-2">
-          <TimeField label={t.diary.from} value={start} onChange={setStart} />
-          <div className="flex flex-col items-center gap-1 text-muted-foreground">
-            <ArrowRight className="size-5" />
-            <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium tabular-nums", minutes ? "bg-foreground text-background" : "bg-muted")}>
-              {minutes ? formatMinutes(minutes) : "—"}
-            </span>
-          </div>
-          <TimeField label={t.diary.to} value={end} onChange={setEnd} align="right" />
-        </div>
-        {/* Быстрые длительности: двигают начало, конец остаётся */}
-        <div className="grid grid-cols-6 gap-1.5">
-          {DURATIONS.map((d) => (
-            <button
-              key={d}
-              type="button"
-              onClick={() => setStart(fromMin(toMin(end) - d))}
-              className={cn(
-                "rounded-lg py-2 text-xs font-medium transition-colors",
-                minutes === d ? "bg-foreground text-background" : "bg-background/60 text-muted-foreground hover:text-foreground"
-              )}
-            >
-              {durationLabel(d)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Метки: цветные таблетки + своя */}
+      {/* Метка — сразу под названием: «что делал» и «к чему относится» рядом */}
       <div className="flex flex-col gap-2">
-        <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">{t.diary.tagShort}</span>
         <div className="flex flex-wrap gap-2">
           {tagList.map((h) => {
             const active = tag === h
@@ -226,6 +195,36 @@ function ActivityForm({
               + {t.diary.newTag}
             </button>
           )}
+        </div>
+      </div>
+
+      {/* Время: большая карточка «с → по» + длительность */}
+      <div className="flex flex-col gap-3 rounded-2xl bg-muted/50 p-4">
+        <div className="flex items-center justify-between gap-2">
+          <TimeField label={t.diary.from} value={start} onChange={setStart} />
+          <div className="flex flex-col items-center gap-1 text-muted-foreground">
+            <ArrowRight className="size-5" />
+            <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium tabular-nums", minutes ? "bg-foreground text-background" : "bg-muted")}>
+              {minutes ? formatMinutes(minutes) : "—"}
+            </span>
+          </div>
+          <TimeField label={t.diary.to} value={end} onChange={setEnd} align="right" />
+        </div>
+        {/* Быстрые длительности: двигают начало, конец остаётся */}
+        <div className="grid grid-cols-6 gap-1.5">
+          {DURATIONS.map((d) => (
+            <button
+              key={d}
+              type="button"
+              onClick={() => setStart(fromMin(toMin(end) - d))}
+              className={cn(
+                "rounded-lg py-2 text-xs font-medium transition-colors",
+                minutes === d ? "bg-foreground text-background" : "bg-background/60 text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {durationLabel(d)}
+            </button>
+          ))}
         </div>
       </div>
 

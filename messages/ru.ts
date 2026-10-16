@@ -190,7 +190,7 @@ export const t = {
     to: "По",
     tag: "Метка (необязательно)",
     tagShort: "Метка",
-    newTag: "своя",
+    newTag: "метка",
     tagPlaceholder: "учёба, код, спорт…",
     save: "Сохранить",
     saved: "Записано",
