@@ -63,6 +63,16 @@ export function sleepHours(start: string, end: string) {
   return Math.round((diff / 60) * 100) / 100
 }
 
+// Минуты между началом и концом занятия ('23:30' → '00:15' = 45). Та же формула, что в базе
+export function activityMinutes(start: string, end: string) {
+  const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5))
+  const diff = toMin(end) - toMin(start)
+  return diff <= 0 ? diff + 1440 : diff
+}
+
+// «14:05:00» → «14:05»
+export const hhmm = (time: string) => time.slice(0, 5)
+
 // 95 → «1 ч 35 мин», 40 → «40 мин», 0 → «0 мин»
 export function formatMinutes(min: number) {
   const h = Math.floor(min / 60)

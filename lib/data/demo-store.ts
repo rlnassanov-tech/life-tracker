@@ -1,5 +1,5 @@
-import { DEFAULT_TZ, addDays, sleepHours, todayIn } from "@/lib/dates"
-import type { Attendance, DailyMetrics, Direction, FinCategory, Grade, Session, Subject, Transaction, Currency } from "@/lib/types"
+import { DEFAULT_TZ, activityMinutes, addDays, sleepHours, todayIn } from "@/lib/dates"
+import type { Attendance, DailyMetrics, Direction, FinCategory, Grade, Session, Subject, Transaction, Currency, Activity } from "@/lib/types"
 
 // Данные демо-режима. Живут в памяти сервера и пропадают при его перезапуске.
 
@@ -13,6 +13,7 @@ type DemoStore = {
   finCategories: FinCategory[]
   transactions: Transaction[]
   balances: { currency: Currency; amount: number; as_of: string }[]
+  activities: Activity[]
 }
 
 function seed(): DemoStore {
@@ -121,11 +122,30 @@ function seed(): DemoStore {
   // Баланс введён «сейчас»: дальше его меняют только новые операции
   const balances = [{ currency: "KZT" as Currency, amount: 185000, as_of: new Date().toISOString() }]
 
-  return { directions, sessions, metrics, subjects, attendance, grades, finCategories, transactions, balances }
+  // Дневник: несколько дней примерных занятий
+  const activities: Activity[] = []
+  const act = (daysAgo: number, title: string, tag: string | null, start: string, end: string) =>
+    activities.push({
+      id: crypto.randomUUID(),
+      title,
+      tag,
+      date: addDays(today, -daysAgo),
+      start_time: start + ":00",
+      end_time: end + ":00",
+      duration_min: activityMinutes(start, end),
+    })
+  for (let i = 0; i < 10; i++) {
+    act(i, i % 2 ? "Лекция по матану" : "Домашка по физике", "учёба", "09:00", i % 2 ? "10:30" : "11:15")
+    if (i % 3 !== 2) act(i, "Трекер «Ритм»: новая вкладка", "код", "14:00", i % 2 ? "16:00" : "15:20")
+    if (i % 2 === 0) act(i, "Anki + сериал на английском", "языки", "20:30", "21:15")
+    if (i % 4 === 1) act(i, "Пробежка", null, "07:10", "07:40")
+  }
+
+  return { directions, sessions, metrics, subjects, attendance, grades, finCategories, transactions, balances, activities }
 }
 
 // globalThis — чтобы данные не сбрасывались при горячей перезагрузке кода в dev.
 // Если в коде появилась новая коллекция (store старой версии) — пересоздаём.
 const g = globalThis as unknown as { demoStore?: DemoStore }
-if (!g.demoStore?.balances) g.demoStore = seed()
+if (!g.demoStore?.activities) g.demoStore = seed()
 export const demoStore = g.demoStore

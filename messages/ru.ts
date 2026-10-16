@@ -36,7 +36,7 @@ export const t = {
 
   today: {
     greeting: (name: string) => `Привет, ${name}`,
-    totalHint: "на направления",
+    totalHint: "записано за день",
     directions: "Направления",
     todayShort: "сегодня",
     weekShort: "неделя",
@@ -174,6 +174,31 @@ export const t = {
     waterGoal: "Вода, мл",
     stepsGoal: "Шаги",
     saved: "Сохранено",
+  },
+
+  diary: {
+    title: "Дневник",
+    total: (time: string) => `за день: ${time}`,
+    add: "Записать",
+    empty: "Сегодня пока пусто. Запиши, чем занимался, или засеки время.",
+    newTitle: "Чем занимался?",
+    editTitle: "Изменить запись",
+    what: "Что делал",
+    whatPlaceholder: "Например: домашка по матану",
+    time: "Время",
+    from: "С",
+    to: "По",
+    tag: "Метка (необязательно)",
+    tagPlaceholder: "учёба, код, спорт…",
+    save: "Сохранить",
+    saved: "Записано",
+    delete: "Удалить",
+    deleteConfirm: "Удалить запись?",
+    deleted: "Удалено",
+    timerStart: "Засечь время",
+    timerSince: "Идёт с",
+    noTag: "без метки",
+    byTag: "Куда ушло время",
   },
 
   money: {

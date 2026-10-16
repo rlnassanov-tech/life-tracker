@@ -1,16 +1,14 @@
 import Link from "next/link"
-import { AlertTriangle, ChevronLeft, ChevronRight, Droplet, Footprints, Moon } from "lucide-react"
+import { ChevronLeft, ChevronRight, Droplet, Footprints, Moon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { RING_COLORS, Ring, fmtHours, fmtShort } from "@/components/ring"
 import { getProfile } from "@/lib/auth"
-import { getDirections } from "@/lib/data/directions"
+import { getActivities } from "@/lib/data/activities"
 import { getMetricsRange } from "@/lib/data/metrics"
-import { getLastSessionDates, getSessionsSince } from "@/lib/data/sessions"
-import { addDays, daysBetween, formatDayMonth, formatMinutes, formatWeekday, weekStart } from "@/lib/dates"
+import { addDays, formatDayMonth, formatMinutes, formatWeekday, weekStart } from "@/lib/dates"
+import { tagColor } from "@/lib/tags"
 import { getToday } from "@/lib/today"
 import { t } from "@/messages/ru"
-
-const NEGLECT_DAYS = 3 // столько дней без записей = «забросил»
 
 export default async function WeekPage({ searchParams }: PageProps<"/week">) {
   const today = await getToday()
@@ -23,29 +21,30 @@ export default async function WeekPage({ searchParams }: PageProps<"/week">) {
   const isCurrent = from === currentWeek
   const days = Array.from({ length: 7 }, (_, i) => addDays(from, i))
 
-  const [profile, directions, sessions, metrics, lastDates] = await Promise.all([
+  const [profile, activities, metrics] = await Promise.all([
     getProfile(),
-    getDirections(),
-    getSessionsSince(from, to),
+    getActivities(from, to),
     getMetricsRange(from, to),
-    getLastSessionDates(),
   ])
 
-  // ---- Время: по направлениям и по дням ----
-  const byDirection: Record<string, number> = {}
-  const byDay: Record<string, Record<string, number>> = {} // день → направление → минуты
-  for (const s of sessions) {
-    byDirection[s.direction_id] = (byDirection[s.direction_id] ?? 0) + s.duration_min
-    const day = (byDay[s.date] ??= {})
-    day[s.direction_id] = (day[s.direction_id] ?? 0) + s.duration_min
+  // ---- Время: по меткам и по дням (из дневника) ----
+  const NO_TAG = "" // ключ для записей без метки
+  const byTag: Record<string, number> = {}
+  const byDay: Record<string, Record<string, number>> = {} // день → метка → минуты
+  for (const a of activities) {
+    const tag = a.tag ?? NO_TAG
+    byTag[tag] = (byTag[tag] ?? 0) + a.duration_min
+    const day = (byDay[a.date] ??= {})
+    day[tag] = (day[tag] ?? 0) + a.duration_min
   }
-  const total = Object.values(byDirection).reduce((a, b) => a + b, 0)
-  const dayTotal = (d: string) => Object.values(byDay[d] ?? {}).reduce((a, b) => a + b, 0)
+  const total = Object.values(byTag).reduce((x, y) => x + y, 0)
+  const dayTotal = (d: string) => Object.values(byDay[d] ?? {}).reduce((x, y) => x + y, 0)
   const maxDay = Math.max(1, ...days.map(dayTotal))
 
-  // Направления с временем за неделю — от большего к меньшему (архивные тоже, если были записи)
-  const ranked = directions.filter((d) => byDirection[d.id]).sort((a, b) => byDirection[b.id] - byDirection[a.id])
-  const maxDirection = Math.max(1, ...ranked.map((d) => byDirection[d.id]))
+  // Метки от большего времени к меньшему; «без метки» — в конце
+  const ranked = Object.keys(byTag).sort((x, y) => (x === NO_TAG ? 1 : y === NO_TAG ? -1 : byTag[y] - byTag[x]))
+  const maxTag = Math.max(1, ...ranked.map((tag) => byTag[tag]))
+  const tagLabel = (tag: string) => (tag === NO_TAG ? t.diary.noTag : `#${tag}`)
 
   // ---- Средние показатели (только по дням, где что-то внесено) ----
   const avg = (values: number[]) => (values.length ? values.reduce((a, b) => a + b, 0) / values.length : null)
@@ -83,13 +82,6 @@ export default async function WeekPage({ searchParams }: PageProps<"/week">) {
     },
   ]
 
-  // ---- Заброшенные: активные направления без записей 3+ дня (считаем от сегодня) ----
-  const neglected = directions
-    .filter((d) => !d.archived)
-    .map((d) => ({ ...d, days: lastDates[d.id] ? daysBetween(lastDates[d.id], today) : null }))
-    .filter((d) => d.days === null || d.days >= NEGLECT_DAYS)
-    .sort((a, b) => (b.days ?? Infinity) - (a.days ?? Infinity))
-
   return (
     <div className="flex flex-col gap-6">
       {/* Заголовок и переключение недель */}
@@ -121,24 +113,6 @@ export default async function WeekPage({ searchParams }: PageProps<"/week">) {
         </Button>
       </header>
 
-      {/* Подсветка заброшенных — только для текущей недели, иначе сбивает с толку */}
-      {isCurrent && neglected.length > 0 && (
-        <section className="flex flex-col gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
-          <h2 className="flex items-center gap-2 font-medium text-amber-300">
-            <AlertTriangle className="size-4" /> {t.week.neglected}
-          </h2>
-          {neglected.map((d) => (
-            <Link key={d.id} href={`/directions/${d.id}`} className="flex items-center justify-between gap-2">
-              <span>
-                {d.icon} {d.name}
-              </span>
-              <span className="text-sm text-amber-200/80">
-                {d.days === null ? t.week.never : t.week.neglectedDays(d.days)}
-              </span>
-            </Link>
-          ))}
-        </section>
-      )}
 
       {/* Средние за день — кольцами, как на «Сегодня» */}
       <section className="flex flex-col gap-3">
@@ -174,12 +148,12 @@ export default async function WeekPage({ searchParams }: PageProps<"/week">) {
                     style={{ height: `${Math.max(dayMin ? 4 : 2, (dayMin / maxDay) * 100)}%` }}
                     title={formatMinutes(dayMin)}
                   >
-                    {directions
-                      .filter((dir) => byDay[d]?.[dir.id])
-                      .map((dir) => (
+                    {ranked
+                      .filter((tag) => byDay[d]?.[tag])
+                      .map((tag) => (
                         <div
-                          key={dir.id}
-                          style={{ height: `${(byDay[d][dir.id] / dayMin) * 100}%`, backgroundColor: dir.color }}
+                          key={tag}
+                          style={{ height: `${(byDay[d][tag] / dayMin) * 100}%`, backgroundColor: tagColor(tag || null) }}
                         />
                       ))}
                   </div>
@@ -193,27 +167,25 @@ export default async function WeekPage({ searchParams }: PageProps<"/week">) {
         </div>
       </section>
 
-      {/* Полосы по направлениям */}
+      {/* Полосы по меткам */}
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm text-muted-foreground">{t.week.byDirection}</h2>
+        <h2 className="text-sm text-muted-foreground">{t.diary.byTag}</h2>
         {ranked.length === 0 && <p className="text-muted-foreground">{t.week.empty}</p>}
-        {ranked.map((d) => (
-          <Link key={d.id} href={`/directions/${d.id}`} className="flex flex-col gap-1.5">
+        {ranked.map((tag) => (
+          <div key={tag} className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-sm">
-              <span>
-                {d.icon} {d.name}
-              </span>
+              <span style={{ color: tag ? tagColor(tag) : undefined }}>{tagLabel(tag)}</span>
               <span className="text-muted-foreground">
-                {formatMinutes(byDirection[d.id])} · {Math.round((byDirection[d.id] / total) * 100)}%
+                {formatMinutes(byTag[tag])} · {Math.round((byTag[tag] / total) * 100)}%
               </span>
             </div>
             <div className="h-3 overflow-hidden rounded-full bg-muted">
               <div
                 className="h-full rounded-full"
-                style={{ width: `${(byDirection[d.id] / maxDirection) * 100}%`, backgroundColor: d.color }}
+                style={{ width: `${(byTag[tag] / maxTag) * 100}%`, backgroundColor: tagColor(tag || null) }}
               />
             </div>
-          </Link>
+          </div>
         ))}
       </section>
 

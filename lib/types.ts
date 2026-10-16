@@ -54,6 +54,20 @@ export type Grade = {
   note: string | null
 }
 
+// ---------- Дневник ----------
+// Свободная запись: чем занимался, с какого по какое время. Время — 'HH:MM:SS'
+export type Activity = {
+  id: string
+  title: string
+  tag: string | null
+  date: string
+  start_time: string
+  end_time: string
+  duration_min: number
+}
+
+export type ActivityInput = Omit<Activity, "id" | "duration_min">
+
 // ---------- Финансы ----------
 export const CURRENCIES = ["KZT", "USD", "EUR", "RUB"] as const
 export type Currency = (typeof CURRENCIES)[number]

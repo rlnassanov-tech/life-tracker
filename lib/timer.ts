@@ -5,7 +5,8 @@ import { useSyncExternalStore } from "react"
 // Таймер занятия. Хранится в localStorage, поэтому переживает перезагрузку
 // и закрытие вкладки (но живёт на одном устройстве). Одновременно — один таймер.
 
-export type Timer = { directionId: string; startedAt: number }
+// directionId — старый режим (таймер на плитке направления); для дневника не нужен
+export type Timer = { directionId?: string; startedAt: number }
 
 const KEY = "timer"
 const EVENT = "timer-change"
@@ -18,7 +19,7 @@ function read(): string | null {
   }
 }
 
-export function startTimer(directionId: string) {
+export function startTimer(directionId?: string) {
   try {
     localStorage.setItem(KEY, JSON.stringify({ directionId, startedAt: Date.now() }))
   } catch {}
