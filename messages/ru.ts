@@ -235,6 +235,7 @@ export const t = {
     editTitle: "Изменить операцию",
     amount: "Сумма",
     category: "Категория",
+    chooseCategory: "Выбери категорию",
     note: "Заметка",
     notePlaceholder: "Необязательно",
     save: "Сохранить",

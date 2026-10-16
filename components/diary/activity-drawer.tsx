@@ -38,7 +38,7 @@ export function ActivityDrawer({ trigger, open: controlledOpen, onOpenChange, ..
     <Drawer open={open} onOpenChange={setOpen}>
       {trigger && <DrawerTrigger asChild>{trigger}</DrawerTrigger>}
       {/* mx-auto max-w-lg — на компьютере шторка не растягивается на весь экран */}
-      <DrawerContent className="mx-auto w-full max-w-lg">
+      <DrawerContent>
         <DrawerTitle className="sr-only">{props.activity ? t.diary.editTitle : t.diary.newTitle}</DrawerTitle>
         {/* Форма монтируется при каждом открытии — время «сейчас» берётся свежее */}
         <ActivityForm {...props} onDone={() => setOpen(false)} />

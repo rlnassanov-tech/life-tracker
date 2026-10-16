@@ -1,11 +1,10 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { CalendarDays, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer"
+import { Drawer, DrawerContent, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer"
 import { addTransaction, deleteTransaction, updateTransaction } from "@/lib/actions/finance"
 import { addDays } from "@/lib/dates"
 import { CURRENCY_SYMBOL } from "@/lib/money"
@@ -20,7 +19,7 @@ type Props = {
   today: string
   currency: Currency // основная валюта
   kind?: FinKind // для новой операции
-  transaction?: Transaction // если передана — режим редактирования
+  transaction?: Transaction // если передана — режим правки
 }
 
 // Шторка: новый расход/доход или правка операции
@@ -33,14 +32,20 @@ export function TransactionDrawer({ trigger, ...props }: Props) {
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
       <DrawerContent>
-        <DrawerHeader className="pb-0">
-          <DrawerTitle>{title}</DrawerTitle>
-        </DrawerHeader>
+        <DrawerTitle className="sr-only">{title}</DrawerTitle>
         {/* Форма монтируется при каждом открытии — поля сбрасываются сами */}
-        <TransactionForm {...props} kind={kind} onDone={() => setOpen(false)} />
+        <TransactionForm {...props} kind={kind} title={title} onDone={() => setOpen(false)} />
       </DrawerContent>
     </Drawer>
   )
+}
+
+// 2500 → «2 500» для крупного вывода суммы
+const pretty = (raw: string) => {
+  if (!raw) return "0"
+  const [int, frac] = raw.replace(",", ".").split(".")
+  const grouped = Number(int || 0).toLocaleString("ru-RU")
+  return frac !== undefined ? `${grouped},${frac}` : grouped
 }
 
 function TransactionForm({
@@ -48,9 +53,10 @@ function TransactionForm({
   today,
   currency: mainCurrency,
   kind,
+  title,
   transaction,
   onDone,
-}: Omit<Props, "trigger"> & { kind: FinKind; onDone: () => void }) {
+}: Omit<Props, "trigger"> & { kind: FinKind; title: string; onDone: () => void }) {
   const list = categories.filter((c) => c.kind === kind)
   const [amount, setAmount] = useState(transaction ? String(transaction.amount) : "")
   const [currency, setCurrency] = useState<Currency>(transaction?.currency ?? mainCurrency)
@@ -59,9 +65,11 @@ function TransactionForm({
   const [note, setNote] = useState(transaction?.note ?? "")
   const [pending, startTransition] = useTransition()
   const yesterday = addDays(today, -1)
+  const isIncome = kind === "income"
 
   // Основная валюта первой
   const currencies = [mainCurrency, ...CURRENCIES.filter((c) => c !== mainCurrency)]
+  const selected = list.find((c) => c.id === categoryId)
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -95,87 +103,128 @@ function TransactionForm({
   }
 
   return (
-    <form onSubmit={submit} className="flex max-h-[75dvh] flex-col gap-5 overflow-y-auto p-4">
-      {/* Сумма + валюта */}
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="amount">{t.money.amount}</Label>
-        <div className="flex items-center gap-2">
-          <Input
-            id="amount"
+    <form onSubmit={submit} className="flex max-h-[80dvh] flex-col gap-6 overflow-y-auto px-5 pt-4">
+      {/* Сумма — крупно по центру; поле поверх прозрачное, видно красивое число */}
+      <div className="flex flex-col items-center gap-3">
+        <span className="text-sm text-muted-foreground">{title}</span>
+        <label className="relative flex w-full items-baseline justify-center gap-2">
+          <span
+            className={cn(
+              "text-5xl font-semibold tabular-nums",
+              !amount && "text-muted-foreground/40",
+              amount && (isIncome ? "text-emerald-400" : "text-foreground")
+            )}
+          >
+            {isIncome ? "+" : "−"}
+            {pretty(amount)}
+          </span>
+          <span className="text-3xl font-semibold text-muted-foreground">{CURRENCY_SYMBOL[currency]}</span>
+          <input
             inputMode="decimal"
             autoFocus={!transaction}
             required
-            placeholder="0"
+            aria-label={t.money.amount}
             value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/[^\d.,]/g, ""))}
-            className={cn("h-16 text-center text-3xl font-semibold", kind === "income" && "text-emerald-400")}
+            className="absolute inset-0 w-full cursor-text bg-transparent text-transparent caret-transparent outline-none"
           />
-        </div>
-        <div className="grid grid-cols-4 gap-2">
+        </label>
+        {/* Валюта — маленькие таблетки */}
+        <div className="flex gap-1 rounded-full bg-muted/50 p-1">
           {currencies.map((c) => (
-            <Button
+            <button
               key={c}
               type="button"
-              variant={c === currency ? "default" : "outline"}
               onClick={() => setCurrency(c)}
-              className="h-10"
-            >
-              {CURRENCY_SYMBOL[c]} {c}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* Категория: сетка эмодзи */}
-      <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium">{t.money.category}</span>
-        <div className="grid grid-cols-4 gap-2">
-          {list.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setCategoryId(c.id)}
               className={cn(
-                "flex flex-col items-center gap-1 rounded-xl border-2 p-2 text-xs",
-                c.id === categoryId ? "bg-muted" : "border-transparent bg-muted/40 text-muted-foreground"
+                "rounded-full px-3 py-1 text-sm tabular-nums",
+                c === currency ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
               )}
-              style={c.id === categoryId ? { borderColor: c.color } : undefined}
             >
-              <span className="text-2xl">{c.icon}</span>
-              <span className="w-full truncate text-center">{c.name}</span>
+              {CURRENCY_SYMBOL[c]}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Дата */}
-      <div className="grid grid-cols-3 gap-2">
-        <Button type="button" variant={date === today ? "default" : "outline"} onClick={() => setDate(today)} className="h-11">
-          {t.entry.today}
-        </Button>
-        <Button type="button" variant={date === yesterday ? "default" : "outline"} onClick={() => setDate(yesterday)} className="h-11">
-          {t.entry.yesterday}
-        </Button>
-        <Input type="date" required max={today} value={date} onChange={(e) => setDate(e.target.value)} className="h-11" aria-label={t.entry.date} />
+      {/* Категория — плотная сетка эмодзи */}
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+        {list.map((c) => {
+          const active = c.id === categoryId
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setCategoryId(c.id)}
+              className={cn(
+                "flex flex-col items-center gap-1 rounded-2xl px-1 py-2.5 text-[11px] transition-colors",
+                active ? "text-foreground" : "text-muted-foreground hover:bg-muted/60"
+              )}
+              style={active ? { backgroundColor: `${c.color}33`, boxShadow: `inset 0 0 0 2px ${c.color}` } : undefined}
+            >
+              <span className="text-2xl">{c.icon}</span>
+              <span className="w-full truncate text-center">{c.name}</span>
+            </button>
+          )
+        })}
       </div>
 
-      <Input
+      {/* Заметка — одной строкой */}
+      <input
         placeholder={`${t.money.note} — ${t.money.notePlaceholder.toLowerCase()}`}
         aria-label={t.money.note}
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        className="h-12 text-base"
+        className="border-b border-border bg-transparent pb-2 text-base outline-none placeholder:text-muted-foreground/60 focus:border-foreground"
       />
 
-      {transaction && (
-        <Button type="button" variant="destructive" disabled={pending} onClick={remove} className="h-12">
-          {t.money.delete}
-        </Button>
-      )}
-      {/* sticky — «Сохранить» всегда виден, даже если форма длиннее экрана */}
-      <div className="sticky bottom-0 -mx-4 -mb-4 bg-popover px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        <Button type="submit" disabled={pending || !categoryId || !amount} className="h-14 w-full text-lg">
-          {t.money.save}
+      {/* День: компактный переключатель */}
+      <div className="flex items-center gap-1 self-start rounded-full bg-muted/50 p-1">
+        {[
+          [today, t.entry.today],
+          [yesterday, t.entry.yesterday],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => setDate(value)}
+            className={cn("rounded-full px-4 py-1.5 text-sm", date === value ? "bg-foreground text-background" : "text-muted-foreground")}
+          >
+            {label}
+          </button>
+        ))}
+        <label
+          className={cn(
+            "relative flex cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-sm",
+            date !== today && date !== yesterday ? "bg-foreground text-background" : "text-muted-foreground"
+          )}
+        >
+          <CalendarDays className="size-4" />
+          {date !== today && date !== yesterday && date.slice(8, 10) + "." + date.slice(5, 7)}
+          <input
+            type="date"
+            max={today}
+            value={date}
+            onChange={(e) => e.target.value && setDate(e.target.value)}
+            aria-label={t.entry.date}
+            className="absolute inset-0 cursor-pointer opacity-0"
+          />
+        </label>
+      </div>
+
+      {/* Низ: удалить (при правке) + сохранить с подсказкой категории */}
+      <div className="sticky bottom-0 -mx-5 flex gap-2 bg-popover px-5 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+        {transaction && (
+          <Button type="button" variant="ghost" size="icon" disabled={pending} onClick={remove} className="size-14 text-destructive" aria-label={t.money.delete}>
+            <Trash2 className="size-5" />
+          </Button>
+        )}
+        <Button
+          type="submit"
+          disabled={pending || !categoryId || !amount}
+          className={cn("h-14 flex-1 rounded-xl text-lg", isIncome && "bg-emerald-500 text-white hover:bg-emerald-500/90")}
+        >
+          {selected ? `${t.money.save} · ${selected.icon} ${selected.name}` : t.money.chooseCategory}
         </Button>
       </div>
     </form>
